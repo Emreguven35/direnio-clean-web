@@ -12,7 +12,9 @@ const gameState = {
   umbrellaActive: false,
   umbrellaCooldown: 0,
   maskCooldown: 0,
-  tweetCooldown: 0
+  tweetCooldown: 0,
+  mahmutUnlocked: false, // Mahmut karakteri için
+  speedBonus: 0 // Mahmut hız bonusu
 };
 
 // Sahne, kamera ve render ayarları
@@ -227,6 +229,7 @@ function createPoliceOfficer(x, z, patrolRadius = 0) {
     patrolRadius,
     patrolAngle: Math.random() * Math.PI * 2,
     patrolSpeed: 0.0005,
+    detectionRange: 2.5, // Yakalama mesafesi eklendi
     update: function(deltaTime) {
       if (this.patrolRadius > 0) {
         this.patrolAngle += this.patrolSpeed * deltaTime;
@@ -332,8 +335,8 @@ const toma = {
   group: tomaGroup,
   position: new THREE.Vector3(40, 0, 40),
   direction: new THREE.Vector3(1, 0, 0),
-  speed: 0.03,
-  rotationSpeed: 0.005,
+  speed: 0.003, // 1/10 oranında yavaşlatıldı
+  rotationSpeed: 0.0005, // Dönüş hızı da yavaşlatıldı
   spraying: false,
   sprayTimeout: null,
   waterParticles: [],
@@ -346,8 +349,8 @@ const toma = {
       this.direction.normalize();
     }
     
-    // Rastgele su püskürtme
-    if (!this.spraying && Math.random() < 0.002) {
+    // Rastgele su püskürtme (daha sık püskürtecek)
+    if (!this.spraying && Math.random() < 0.02) {
       this.startSpraying();
     }
     
@@ -445,9 +448,27 @@ const toma = {
       // Oyuncu ile çarpışma kontrolü
       const distance = particle.position.distanceTo(controls.getObject().position);
       if (distance < 1.5) {
-        // Su çarptı - oyuncuya güç uygula
-        velocity.x = particle.velocity.x * 5;
-        velocity.z = particle.velocity.z * 5;
+        // Şemsiye aktifse su etki etmez
+        if (!gameState.umbrellaActive) {
+          // Su çarptı - oyuncuya güç uygula
+          velocity.x = particle.velocity.x * 5;
+          velocity.z = particle.velocity.z * 5;
+          
+          gameState.messages.push({
+            text: "TOMA suyu sana çarptı!",
+            time: 100,
+            color: '#00ffff'
+          });
+        } else {
+          // Şemsiye aktifse mesaj göster
+          if (Math.random() < 0.1) { // Çok fazla mesaj göstermesin
+            gameState.messages.push({
+              text: "Şemsiye seni TOMA suyundan korudu!",
+              time: 50,
+              color: '#00ffff'
+            });
+          }
+        }
         
         // Parçacığı temizle
         scene.remove(particle);
@@ -728,253 +749,3 @@ function createUI() {
     });
     
     return button;
-  };
-  
-  const umbrella = createToolButton('☂️', 'Şemsiye', '1', 'umbrella-button');
-  const mask = createToolButton('😷', 'Maske', '2', 'mask-button');
-  const tweet = createToolButton('🐦', 'Tweet', '3', 'tweet-button');
-  
-  toolsContainer.appendChild(umbrella);
-  toolsContainer.appendChild(mask);
-  toolsContainer.appendChild(tweet);
-  
-  document.body.appendChild(toolsContainer);
-  // Şemsiye korunma özelliği
-umbrella.addEventListener('click', function() {
-  if (!gameState.umbrellaActive && gameState.umbrellaCooldown === 0) {
-    gameState.umbrellaActive = true;
-    gameState.umbrellaCooldown = 1500; // 15 saniye cooldown
-    
-    gameState.messages.push({
-      text: "Şemsiye aktif! TOMA suyundan 10 saniye boyunca korunacaksın.",
-      time: 300,
-      color: '#00ffff'
-    });
-    
-    // Görsel ipucu olarak şemsiye butonunu belirginleştir
-    this.style.backgroundColor = '#007bff';
-    this.style.borderColor = '#0056b3';
-    this.classList.add('active');
-    
-    // 10 saniye sonra etkiyi kaldır
-    setTimeout(() => {
-      gameState.umbrellaActive = false;
-      this.style.backgroundColor = '#333';
-      this.style.borderColor = '#555';
-      this.classList.remove('active');
-      
-      gameState.messages.push({
-        text: "Şemsiye koruması sona erdi!",
-        time: 200,
-        color: '#aaaaaa'
-      });
-    }, 10000);
-  }
-});
-  // Maske özelliği - Polisler tarafından yakalanmayı azaltır
-mask.addEventListener('click', function() {
-  if (gameState.maskCooldown === 0) {
-    gameState.maskCooldown = 2000; // 20 saniye cooldown
-    
-    gameState.messages.push({
-      text: "Maske takıldı! Polisler seni 15 saniye daha zor tanıyacak.",
-      time: 300,
-      color: '#aaffaa'
-    });
-    
-    // Görsel ipucu
-    this.style.backgroundColor = '#28a745';
-    this.style.borderColor = '#1e7e34';
-    this.classList.add('active');
-    
-    // Polis yakalama mesafesini azalt
-    const originalDetectionRange = 2.5;
-    policeOfficers.forEach(police => {
-      police.detectionRange = 1.2; // Daha düşük yakalama mesafesi
-    });
-    
-    // 15 saniye sonra etkiyi kaldır
-    setTimeout(() => {
-      policeOfficers.forEach(police => {
-        police.detectionRange = originalDetectionRange;
-      });
-      
-      this.style.backgroundColor = '#333';
-      this.style.borderColor = '#555';
-      this.classList.remove('active');
-      
-      gameState.messages.push({
-        text: "Maske etkisi sona erdi!",
-        time: 200,
-        color: '#aaaaaa'
-      });
-    }, 15000);
-  }
-});
-
-// Tweet özelliği - Daha fazla XP kazandırır
-tweet.addEventListener('click', function() {
-  if (gameState.tweetCooldown === 0) {
-    gameState.tweetCooldown = 1000; // 10 saniye cooldown
-    
-    // Tweet XP bonus
-    const xpBonus = 50;
-    gameState.xp += xpBonus;
-    checkLevelUp();
-    
-    gameState.messages.push({
-      text: `Tweet atıldı! +${xpBonus} XP kazandın.`,
-      time: 300,
-      color: '#aaccff'
-    });
-    
-    // Görsel efekt
-    this.style.backgroundColor = '#1da1f2';
-    this.style.borderColor = '#0c85d0';
-    this.classList.add('active');
-    
-    setTimeout(() => {
-      this.style.backgroundColor = '#333';
-      this.style.borderColor = '#555';
-      this.classList.remove('active');
-    }, 1000);
-  }
-});
-}
-
-// UI'ı güncelleme
-function updateUI() {
-  // XP, Level ve süre bilgilerini güncelle
-  document.getElementById('xp-display').textContent = `XP: ${gameState.xp}`;
-  document.getElementById('level-display').textContent = `Seviye: ${gameState.level}`;
-  document.getElementById('time-display').textContent = `Süre: ${Math.floor(gameState.gameTime / 100)} sn`;
-  
-  // Mesajları güncelle
-  const messagesElement = document.getElementById('messages');
-  messagesElement.innerHTML = '';
-  
-  for (let i = 0; i < gameState.messages.length; i++) {
-    const msg = gameState.messages[i];
-    
-    const messageElement = document.createElement('div');
-    messageElement.textContent = msg.text;
-    messageElement.style.color = msg.color;
-    messageElement.style.marginBottom = '10px';
-    
-    messagesElement.appendChild(messageElement);
-    
-    // Mesaj süresini azalt
-    msg.time -= 1;
-  }
-  
-  // Süresi dolan mesajları kaldır
-  gameState.messages = gameState.messages.filter(msg => msg.time > 0);
-  
-  // Slogan cooldown'ı güncelle
-  if (gameState.sloganCooldown > 0) {
-    gameState.sloganCooldown -= 1;
-  }
-  
-  // Level 10'dan sonra Mahmut karakterini aktifleştir...
-  
-  // Buraya cooldown yönetimini eklemeniz gerekiyor:
-  
-  // Cooldown yönetimi
-  if (gameState.umbrellaCooldown > 0) {
-    gameState.umbrellaCooldown--;
-    document.getElementById('umbrella-button').style.opacity = 0.5;
-  } else {
-    document.getElementById('umbrella-button').style.opacity = 1;
-  }
-  
-  if (gameState.maskCooldown > 0) {
-    gameState.maskCooldown--;
-    document.getElementById('mask-button').style.opacity = 0.5;
-  } else {
-    document.getElementById('mask-button').style.opacity = 1;
-  }
-  
-  if (gameState.tweetCooldown > 0) {
-    gameState.tweetCooldown--;
-    document.getElementById('tweet-button').style.opacity = 0.5;
-  } else {
-    document.getElementById('tweet-button').style.opacity = 1;
-  }
-}
-
-// Oyun döngüsü
-let previousTime = performance.now();
-const clock = new THREE.Clock();
-
-function animate() {
-  requestAnimationFrame(animate);
-  
-  const currentTime = performance.now();
-  const deltaTime = Math.min(200, currentTime - previousTime);
-  previousTime = currentTime;
-  
-  if (controlsEnabled && gameState.playerAlive) {
-    // Karakter hareketi
-    const delta = clock.getDelta();
-    
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-    
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize();
-    
-    const speedMultiplier = isRunning ? 60.0 : 40.0;
-    
-    if (moveForward || moveBackward) velocity.z -= direction.z * speedMultiplier * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * speedMultiplier * delta;
-    
-    controls.moveRight(-velocity.x * delta);
-    controls.moveForward(-velocity.z * delta);
-    
-   // Sınırlar içinde tutma
-    const playerPos = controls.getObject().position;
-    if (Math.abs(playerPos.x) > 490) {
-      playerPos.x = Math.sign(playerPos.x) * 490;
-    }
-    if (Math.abs(playerPos.z) > 490) {
-      playerPos.z = Math.sign(playerPos.z) * 490;
-    }
-    
-    // XP ve oyun süresi güncelleme
-    gameState.gameTime += 1;
-    if (gameState.gameTime % 100 === 0) { // Her saniye
-      gameState.xp += 1;
-      checkLevelUp();
-    }
-  }
-  
-  // Polisleri güncelle
-  for (const police of policeOfficers) {
-    if (police.update(deltaTime) && gameState.playerAlive) {
-      playerCaught();
-    }
-  }
-  
-  // TOMA'yı güncelle
-  toma.update(deltaTime);
-  
-  // UI güncelleme
-  updateUI();
-  
-  // Render
-  renderer.render(scene, camera);
-}
-
-// UI oluştur
-createUI();
-
-// Ekran yeniden boyutlandırma
-window.addEventListener('resize', function() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// Oyunu başlat
-animate();
