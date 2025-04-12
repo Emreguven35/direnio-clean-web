@@ -8,7 +8,11 @@ const gameState = {
   level: 1,
   gameTime: 0,
   messages: [],
-  sloganCooldown: 0
+  sloganCooldown: 0,
+  umbrellaActive: false,
+  umbrellaCooldown: 0,
+  maskCooldown: 0,
+  tweetCooldown: 0
 };
 
 // Sahne, kamera ve render ayarları
@@ -257,7 +261,7 @@ function createPoliceOfficer(x, z, patrolRadius = 0) {
         Math.pow(this.body.position.z - controls.getObject().position.z, 2)
       );
       
-      if (distance < 2.5) {
+      if (distance < this.detectionRange) {
         // Oyuncu yakalandı
         return true;
       }
@@ -519,6 +523,27 @@ document.addEventListener('keydown', function(event) {
         gameState.sloganCooldown = 200; // 2 saniyelik cooldown
       }
       break;
+    case 'Digit1':
+    case 'Numpad1':
+      // Şemsiye kısa yolu
+      if (!gameState.umbrellaCooldown) {
+        document.getElementById('umbrella-button').click();
+      }
+      break;
+    case 'Digit2':  
+    case 'Numpad2':
+      // Maske kısa yolu
+      if (!gameState.maskCooldown) {
+        document.getElementById('mask-button').click();
+      }
+      break;
+    case 'Digit3':
+    case 'Numpad3':
+      // Tweet kısa yolu
+      if (!gameState.tweetCooldown) {
+        document.getElementById('tweet-button').click();
+      }
+      break;
   }
 });
 
@@ -659,40 +684,162 @@ function createUI() {
   toolsContainer.style.gap = '10px';
   toolsContainer.id = 'tools';
   
-  const createToolButton = (emoji, name) => {
+  const createToolButton = (emoji, name, shortcut, id) => {
     const button = document.createElement('button');
-    button.style.width = '50px';
-    button.style.height = '50px';
+    button.style.width = '60px';
+    button.style.height = '60px';
     button.style.fontSize = '24px';
     button.style.borderRadius = '50%';
     button.style.backgroundColor = '#333';
     button.style.color = 'white';
     button.style.border = '2px solid #555';
     button.style.cursor = 'pointer';
-    button.innerHTML = emoji;
+    button.style.position = 'relative';
+    button.id = id;
+    
+    // Emoji ve kısa yol tuşu gösterimi
+    const emojiSpan = document.createElement('span');
+    emojiSpan.innerHTML = emoji;
+    button.appendChild(emojiSpan);
+    
+    // Kısa yol tuşu etiketi
+    const shortcutLabel = document.createElement('div');
+    shortcutLabel.style.position = 'absolute';
+    shortcutLabel.style.bottom = '2px';
+    shortcutLabel.style.right = '2px';
+    shortcutLabel.style.fontSize = '11px';
+    shortcutLabel.style.backgroundColor = '#555';
+    shortcutLabel.style.padding = '1px 4px';
+    shortcutLabel.style.borderRadius = '3px';
+    shortcutLabel.textContent = shortcut;
+    button.appendChild(shortcutLabel);
+    
     button.title = name;
-    button.disabled = false; // Başlangıçta devre dışı
+    button.disabled = false;
     
     button.addEventListener('mouseover', function() {
       this.style.backgroundColor = '#555';
     });
     
     button.addEventListener('mouseout', function() {
-      this.style.backgroundColor = '#333';
+      if (!this.classList.contains('active')) {
+        this.style.backgroundColor = '#333';
+      }
     });
     
     return button;
   };
   
-  const umbrella = createToolButton('☂️', 'Şemsiye');
-  const mask = createToolButton('😷', 'Maske');
-  const tweet = createToolButton('🐦', 'Tweet');
+  const umbrella = createToolButton('☂️', 'Şemsiye', '1', 'umbrella-button');
+  const mask = createToolButton('😷', 'Maske', '2', 'mask-button');
+  const tweet = createToolButton('🐦', 'Tweet', '3', 'tweet-button');
   
   toolsContainer.appendChild(umbrella);
   toolsContainer.appendChild(mask);
   toolsContainer.appendChild(tweet);
   
   document.body.appendChild(toolsContainer);
+  // Şemsiye korunma özelliği
+umbrella.addEventListener('click', function() {
+  if (!gameState.umbrellaActive && gameState.umbrellaCooldown === 0) {
+    gameState.umbrellaActive = true;
+    gameState.umbrellaCooldown = 1500; // 15 saniye cooldown
+    
+    gameState.messages.push({
+      text: "Şemsiye aktif! TOMA suyundan 10 saniye boyunca korunacaksın.",
+      time: 300,
+      color: '#00ffff'
+    });
+    
+    // Görsel ipucu olarak şemsiye butonunu belirginleştir
+    this.style.backgroundColor = '#007bff';
+    this.style.borderColor = '#0056b3';
+    this.classList.add('active');
+    
+    // 10 saniye sonra etkiyi kaldır
+    setTimeout(() => {
+      gameState.umbrellaActive = false;
+      this.style.backgroundColor = '#333';
+      this.style.borderColor = '#555';
+      this.classList.remove('active');
+      
+      gameState.messages.push({
+        text: "Şemsiye koruması sona erdi!",
+        time: 200,
+        color: '#aaaaaa'
+      });
+    }, 10000);
+  }
+});
+  // Maske özelliği - Polisler tarafından yakalanmayı azaltır
+mask.addEventListener('click', function() {
+  if (gameState.maskCooldown === 0) {
+    gameState.maskCooldown = 2000; // 20 saniye cooldown
+    
+    gameState.messages.push({
+      text: "Maske takıldı! Polisler seni 15 saniye daha zor tanıyacak.",
+      time: 300,
+      color: '#aaffaa'
+    });
+    
+    // Görsel ipucu
+    this.style.backgroundColor = '#28a745';
+    this.style.borderColor = '#1e7e34';
+    this.classList.add('active');
+    
+    // Polis yakalama mesafesini azalt
+    const originalDetectionRange = 2.5;
+    policeOfficers.forEach(police => {
+      police.detectionRange = 1.2; // Daha düşük yakalama mesafesi
+    });
+    
+    // 15 saniye sonra etkiyi kaldır
+    setTimeout(() => {
+      policeOfficers.forEach(police => {
+        police.detectionRange = originalDetectionRange;
+      });
+      
+      this.style.backgroundColor = '#333';
+      this.style.borderColor = '#555';
+      this.classList.remove('active');
+      
+      gameState.messages.push({
+        text: "Maske etkisi sona erdi!",
+        time: 200,
+        color: '#aaaaaa'
+      });
+    }, 15000);
+  }
+});
+
+// Tweet özelliği - Daha fazla XP kazandırır
+tweet.addEventListener('click', function() {
+  if (gameState.tweetCooldown === 0) {
+    gameState.tweetCooldown = 1000; // 10 saniye cooldown
+    
+    // Tweet XP bonus
+    const xpBonus = 50;
+    gameState.xp += xpBonus;
+    checkLevelUp();
+    
+    gameState.messages.push({
+      text: `Tweet atıldı! +${xpBonus} XP kazandın.`,
+      time: 300,
+      color: '#aaccff'
+    });
+    
+    // Görsel efekt
+    this.style.backgroundColor = '#1da1f2';
+    this.style.borderColor = '#0c85d0';
+    this.classList.add('active');
+    
+    setTimeout(() => {
+      this.style.backgroundColor = '#333';
+      this.style.borderColor = '#555';
+      this.classList.remove('active');
+    }, 1000);
+  }
+});
 }
 
 // UI'ı güncelleme
@@ -728,12 +875,30 @@ function updateUI() {
     gameState.sloganCooldown -= 1;
   }
   
-  // Level 10'dan sonra Mahmut karakterini aktifleştir
-  if (gameState.level >= 10) {
-    const toolButtons = document.querySelectorAll('#tools button');
-    toolButtons.forEach(button => {
-      button.disabled = false;
-    });
+  // Level 10'dan sonra Mahmut karakterini aktifleştir...
+  
+  // Buraya cooldown yönetimini eklemeniz gerekiyor:
+  
+  // Cooldown yönetimi
+  if (gameState.umbrellaCooldown > 0) {
+    gameState.umbrellaCooldown--;
+    document.getElementById('umbrella-button').style.opacity = 0.5;
+  } else {
+    document.getElementById('umbrella-button').style.opacity = 1;
+  }
+  
+  if (gameState.maskCooldown > 0) {
+    gameState.maskCooldown--;
+    document.getElementById('mask-button').style.opacity = 0.5;
+  } else {
+    document.getElementById('mask-button').style.opacity = 1;
+  }
+  
+  if (gameState.tweetCooldown > 0) {
+    gameState.tweetCooldown--;
+    document.getElementById('tweet-button').style.opacity = 0.5;
+  } else {
+    document.getElementById('tweet-button').style.opacity = 1;
   }
 }
 
