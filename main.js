@@ -175,7 +175,7 @@ function createPoliceOfficer(x, z, patrolRadius = 0) {
     startPosition: { x, z },
     patrolRadius,
     patrolAngle: Math.random() * Math.PI * 2,
-    patrolSpeed: 0.005,
+    patrolSpeed: 0.0005,
     update: function(deltaTime) {
       if (this.patrolRadius > 0) {
         this.patrolAngle += this.patrolSpeed * deltaTime;
