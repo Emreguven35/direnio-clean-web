@@ -86,7 +86,7 @@ function createBelediyeBinasi() {
   const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
   
   // Ön yüze belediye binası dokusunu ekle
-  const frontTexture = new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Istanbul_City_Hall.jpg/640px-Istanbul_City_Hall.jpg');
+  const frontTexture = new THREE.TextureLoader().load('https://uploads.ibb.istanbul/uploads/sarachane_belediye_bina_a3009f318f.jpg');
   
   // Diğer yüzler için temel renk kullan
   const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xd3b17d });
