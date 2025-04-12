@@ -1,7 +1,5 @@
-// main.js
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Oyun durumu
 const gameState = {
@@ -43,14 +41,8 @@ sunLight.shadow.camera.bottom = -100;
 scene.add(sunLight);
 
 // Zemin oluşturma
-const groundTexture = new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/floors/FloorsCheckerboard_S_Diffuse.jpg');
-groundTexture.wrapS = THREE.RepeatWrapping;
-groundTexture.wrapT = THREE.RepeatWrapping;
-groundTexture.repeat.set(100, 100);
-
 const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
 const groundMaterial = new THREE.MeshStandardMaterial({ 
-  map: groundTexture,
   color: 0xa0a0a0,
   roughness: 0.8 
 });
@@ -728,4 +720,49 @@ function animate() {
     controls.moveRight(-velocity.x * delta);
     controls.moveForward(-velocity.z * delta);
     
-    // Sınır
+   // Sınırlar içinde tutma
+    const playerPos = controls.getObject().position;
+    if (Math.abs(playerPos.x) > 490) {
+      playerPos.x = Math.sign(playerPos.x) * 490;
+    }
+    if (Math.abs(playerPos.z) > 490) {
+      playerPos.z = Math.sign(playerPos.z) * 490;
+    }
+    
+    // XP ve oyun süresi güncelleme
+    gameState.gameTime += 1;
+    if (gameState.gameTime % 100 === 0) { // Her saniye
+      gameState.xp += 1;
+      checkLevelUp();
+    }
+  }
+  
+  // Polisleri güncelle
+  for (const police of policeOfficers) {
+    if (police.update(deltaTime) && gameState.playerAlive) {
+      playerCaught();
+    }
+  }
+  
+  // TOMA'yı güncelle
+  toma.update(deltaTime);
+  
+  // UI güncelleme
+  updateUI();
+  
+  // Render
+  renderer.render(scene, camera);
+}
+
+// UI oluştur
+createUI();
+
+// Ekran yeniden boyutlandırma
+window.addEventListener('resize', function() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Oyunu başlat
+animate();
