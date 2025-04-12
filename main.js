@@ -53,9 +53,20 @@ scene.add(ground);
 
 // Saraçhane Meydanı objeleri
 // Binalar
-function createBuilding(width, height, depth, x, y, z, color) {
+function createBuilding(width, height, depth, x, y, z, color, textureUrl = null) {
   const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
-  const buildingMaterial = new THREE.MeshStandardMaterial({ color });
+  let buildingMaterial;
+  
+  if (textureUrl) {
+    const texture = new THREE.TextureLoader().load(textureUrl);
+    buildingMaterial = new THREE.MeshStandardMaterial({ 
+      map: texture, 
+      color: 0xffffff // Beyaz renk, doku rengini korur
+    });
+  } else {
+    buildingMaterial = new THREE.MeshStandardMaterial({ color });
+  }
+  
   const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
   building.position.set(x, y, z);
   building.castShadow = true;
@@ -63,9 +74,45 @@ function createBuilding(width, height, depth, x, y, z, color) {
   scene.add(building);
   return building;
 }
+// İstanbul Belediye Sarayı/Saraçhane için özel bina oluştur
+function createBelediyeBinasi() {
+  const width = 40;
+  const height = 30;
+  const depth = 20;
+  const x = -50;
+  const y = 15;
+  const z = -50;
+  
+  const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+  
+  // Ön yüze belediye binası dokusunu ekle
+  const frontTexture = new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Istanbul_City_Hall.jpg/640px-Istanbul_City_Hall.jpg');
+  
+  // Diğer yüzler için temel renk kullan
+  const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xd3b17d });
+  
+  // Her yüz için malzeme dizisi oluştur [sağ, sol, üst, alt, ön, arka]
+  const materials = [
+    sideMaterial, // sağ
+    sideMaterial, // sol
+    sideMaterial, // üst
+    sideMaterial, // alt
+    new THREE.MeshStandardMaterial({ map: frontTexture }), // ön
+    sideMaterial  // arka
+  ];
+  
+  const building = new THREE.Mesh(buildingGeometry, materials);
+  building.position.set(x, y, z);
+  building.castShadow = true;
+  building.receiveShadow = true;
+  scene.add(building);
+  
+  return building;
+}
 
-// Belediye binası
-createBuilding(40, 30, 20, -50, 15, -50, 0xd3b17d);
+// Belediye binasını oluştur
+createBelediyeBinasi();
+
 // Büyük tarihi bina
 createBuilding(30, 25, 25, 50, 12.5, -40, 0x8b7d6b);
 // Daha küçük binalar
