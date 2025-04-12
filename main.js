@@ -712,7 +712,7 @@ function animate() {
     direction.x = Number(moveRight) - Number(moveLeft);
     direction.normalize();
     
-    const speedMultiplier = isRunning ? 30.0 : 20.0;
+    const speedMultiplier = isRunning ? 60.0 : 40.0;
     
     if (moveForward || moveBackward) velocity.z -= direction.z * speedMultiplier * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * speedMultiplier * delta;
