@@ -395,9 +395,9 @@ const toma = {
   
   updateWaterSpray: function(deltaTime) {
     // Yeni su parçacıkları oluştur
-    if (Math.random() < 0.2) {
+    if (Math.random() < 1) {
       // Su parçacık geometrisi
-      const waterGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+      const waterGeometry = new THREE.SphereGeometry(0.6, 8, 8);
       const waterMaterial = new THREE.MeshStandardMaterial({
         color: 0x00ffff,
         transparent: true,
@@ -671,7 +671,7 @@ function createUI() {
     button.style.cursor = 'pointer';
     button.innerHTML = emoji;
     button.title = name;
-    button.disabled = true; // Başlangıçta devre dışı
+    button.disabled = false; // Başlangıçta devre dışı
     
     button.addEventListener('mouseover', function() {
       this.style.backgroundColor = '#555';
