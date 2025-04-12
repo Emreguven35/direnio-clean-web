@@ -1,13 +1,10 @@
-
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
-import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/PointerLockControls.js';
-
+import * as THREE from 'three';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xadd8e6);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 1000);
 camera.position.set(0, 3, 10);
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -57,20 +54,21 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
-
+  
   velocity.x -= velocity.x * 10.0 * delta;
   velocity.z -= velocity.z * 10.0 * delta;
-
+  
   direction.z = Number(keys['KeyW']) - Number(keys['KeyS']);
   direction.x = Number(keys['KeyD']) - Number(keys['KeyA']);
   direction.normalize();
-
+  
   if (keys['KeyW'] || keys['KeyS']) velocity.z -= direction.z * 20.0 * delta;
   if (keys['KeyA'] || keys['KeyD']) velocity.x -= direction.x * 20.0 * delta;
-
+  
   controls.moveRight(-velocity.x * delta);
   controls.moveForward(-velocity.z * delta);
-
+  
   renderer.render(scene, camera);
 }
+
 animate();
