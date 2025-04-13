@@ -1002,26 +1002,28 @@ function setupControls() {
   const blocker = document.getElementById('blocker');
   const instructions = document.getElementById('instructions');
 
-  if (instructions) {
-    instructions.addEventListener('click', function() {
+  // Başlangıçta blocker'ı göster
+  if (blocker) blocker.style.display = 'flex';
+  
+  // Tüm belgeye tıklama olayı ekle
+  document.addEventListener('click', function() {
+    if (!controlsEnabled && controls) {
       controls.lock();
-    });
-  }
+    }
+  });
 
   controls.addEventListener('lock', function() {
-    if (instructions) {
-      instructions.style.display = 'none';
-      blocker.style.display = 'none';
-    }
+    if (instructions) instructions.style.display = 'none';
+    if (blocker) blocker.style.display = 'none';
     controlsEnabled = true;
+    console.log("Kontroller etkinleştirildi");
   });
 
   controls.addEventListener('unlock', function() {
-    if (blocker && instructions) {
-      blocker.style.display = 'block';
-      instructions.style.display = '';
-    }
+    if (blocker) blocker.style.display = 'flex';
+    if (instructions) instructions.style.display = '';
     controlsEnabled = false;
+    console.log("Kontroller devre dışı");
   });
   
   // Klavye olayları
@@ -1046,7 +1048,7 @@ function setupControls() {
         // Slogan atma
         if (gameState.sloganCooldown <= 0) {
           showSlogan();
-          gameState.sloganCooldown = 200; // 2 saniyelik cooldown
+          gameState.sloganCooldown = 200;
         }
         break;
       case 'Digit1':
@@ -1071,6 +1073,12 @@ function setupControls() {
         if (gameState.tweetCooldown <= 0) {
           const tweetButton = document.getElementById('tweet-button');
           if (tweetButton) tweetButton.click();
+        }
+        break;
+      case 'Escape':
+        // Escape tuşu ile PointerLock'u kaldır
+        if (controlsEnabled) {
+          controls.unlock();
         }
         break;
     }
