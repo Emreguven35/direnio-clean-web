@@ -1395,6 +1395,29 @@ function createUI() {
       }, 1000);
     }
   });
+  // UI Container'a bir "Kilit Sıfırla" butonu ekle
+  const resetButton = document.createElement('button');
+  resetButton.textContent = 'Kamera Kontrolünü Düzelt';
+  resetButton.style.position = 'absolute';
+  resetButton.style.top = '10px';
+  resetButton.style.right = '10px';
+  resetButton.style.padding = '8px 12px';
+  resetButton.style.backgroundColor = '#ff3333';
+  resetButton.style.color = 'white';
+  resetButton.style.border = 'none';
+  resetButton.style.borderRadius = '4px';
+  resetButton.style.zIndex = '1000';
+  resetButton.style.cursor = 'pointer';
+
+  resetButton.addEventListener('click', function() {
+    // Kontrolleri yeniden başlat
+    controls.unlock();
+    setTimeout(() => {
+      controls.lock();
+    }, 100);
+  });
+
+  document.body.appendChild(resetButton);
 }
 
 // Seçilen karakterin adını döndür
